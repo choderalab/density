@@ -115,7 +115,7 @@ def avg_density(dcd_file,lastframe_file):
     density_file = 'density_'+dcd_file[:-4]+'.dat'
     f = open(density_file, 'w')
     f.write("Average density of the system:\n")
-    f.write(avg_density)
+    f.write(str(avg_density))
 
 def modify_mass(system, traj):
     n_atoms = traj.n_atoms
