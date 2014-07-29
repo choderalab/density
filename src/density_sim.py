@@ -25,8 +25,8 @@ def case(molecule_name, num, steps, ff_mod):
     add_bonds_to_pdb(infile, topfile)
     forcefield = generate_ff(molecule_name, infile, mol2_filename, ff_mod, topfile)
     traj, xyz, top = set_topology(infile, num)
-    system = openmm_system(forcefield, top)
-    openmm_simulation(system, top, xyz, outfile, lastframe_file, outdata, dcd_file, steps)
+    system, integrator = openmm_system(forcefield, top)
+    openmm_simulation(system, top, integrator, xyz, outfile, lastframe_file, outdata, dcd_file, steps)
     avg_density(dcd_file,lastframe_file)
 
 def name_outputs(molecule_name, num, ff_mod):
@@ -46,7 +46,6 @@ def add_bonds_to_pdb(infile, topfile):
     t = md.load_pdb(infile)
     if t.n_residues == 1:
         return
-    print("Modifying PDB file")
     first = t.top.residue(0)
     t.restrict_atoms(range(first.n_atoms))
     gtop = app.GromacsTopFile(topfile)._currentMoleculeType
@@ -88,9 +87,9 @@ def openmm_system(forcefield, top):
     integrator = mm.LangevinIntegrator(temperature, 1/u.picosecond, 0.002*u.picoseconds)
     barostat = mm.MonteCarloBarostat(1.0*u.atmospheres, temperature, 25)
     system.addForce(barostat)
-    return system
+    return system, integrator
 
-def openmm_simulation(system, top, xyz, outfile, lastframe_file, outdata, dcd_file, steps):
+def openmm_simulation(system, top, integrator, xyz, outfile, lastframe_file, outdata, dcd_file, steps):
     simulation = app.Simulation(top, system, integrator)
     simulation.context.setPositions(xyz)
     simulation.minimizeEnergy()
