@@ -25,7 +25,8 @@ def case(molecule_name, num, steps, ff_mod):
     add_bonds_to_pdb(infile, topfile)
     forcefield = generate_ff(molecule_name, infile, mol2_filename, ff_mod, topfile)
     traj, xyz, top = set_topology(infile, num)
-    openmm_density(forcefield, top, xyz, outfile, lastframe_file, outdata, dcd_file, steps)
+    system = openmm_system(forcefield, top)
+    openmm_simulation(system, top, xyz, outfile, lastframe_file, outdata, dcd_file, steps)
     avg_density(dcd_file,lastframe_file)
 
 def name_outputs(molecule_name, num, ff_mod):
@@ -81,12 +82,15 @@ def set_topology(infile, num):
     top.setUnitCellDimensions(mm.Vec3(*traj.unitcell_lengths[0])*u.nanometer)
     return traj, xyz, top
 
-def openmm_density(forcefield, top, xyz, outfile, lastframe_file, outdata, dcd_file, steps):
+def openmm_system(forcefield, top):
     system = forcefield.createSystem(top, nonbondedMethod=app.PME, nonbondedCutoff=1*u.nanometer, constraints=app.HBonds)
     temperature = 298.15*u.kelvin
     integrator = mm.LangevinIntegrator(temperature, 1/u.picosecond, 0.002*u.picoseconds)
     barostat = mm.MonteCarloBarostat(1.0*u.atmospheres, temperature, 25)
     system.addForce(barostat)
+    return system
+
+def openmm_simulation(system, top, xyz, outfile, lastframe_file, outdata, dcd_file, steps):
     simulation = app.Simulation(top, system, integrator)
     simulation.context.setPositions(xyz)
     simulation.minimizeEnergy()
@@ -109,9 +113,21 @@ def avg_density(dcd_file,lastframe_file):
     avg_density = density.mean()
     avg_density = avg_density * u.gram
     avg_density = avg_density.in_units_of(u.gram / u.liter)
-    print(dcd_file[:-4])
-    print("Average density of the system:")
-    print(avg_density)
+    density_file = 'density_'+dcd_file[:-4]+'.dat'
+    f = open(density_file, 'w')
+    f.write("Average density of the system:\n")
+    f.write(avg_density)
+
+def modify_mass(system, traj):
+    n_atoms = traj.n_atoms
+    n_residues = traj.n_residues
+    mlc_atoms = n_atoms / n_residues
+    gtop = app.GromacsTopFile(topfile)._currentMoleculeType
+    lock = dict((row[4],float(row[7])) for row in gtop.atoms)
+    for i in range(mlc_atoms):
+        mass = lock[traj.top.atom(i).name]
+        for x in np.linspace(i, n_atoms+i, n_residues, endpoint=False):
+            system.setParticleMass(int(x), mass *u.dalton)
 
 if __name__ == '__main__':
     molecule_name = raw_input('Name of molecule\n')
