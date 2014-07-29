@@ -1,0 +1,21 @@
+CRYST1   56.562   56.562   56.562  90.00  90.00  90.00 P 1           1 
+MODEL        0
+ATOM      1  Cl1 MOL A   1      47.994   3.458   9.416  1.00  0.00           Cl  
+ATOM      2  C1  MOL A   1      49.164   3.658  10.746  1.00  0.00           C  
+ATOM      3  H1  MOL A   1      48.484   3.658  11.616  1.00  0.00           H  
+ATOM      4  Cl2 MOL A   1      49.734   5.338  10.516  1.00  0.00           Cl  
+ATOM      5  C2  MOL A   1      50.234   2.568  10.766  1.00  0.00           C  
+ATOM      6  H2  MOL A   1      49.844   1.558  10.916  1.00  0.00           H  
+ATOM      7  Cl3 MOL A   1      51.294   2.738   9.336  1.00  0.00           Cl  
+ATOM      8  Cl4 MOL A   1      51.284   2.898  12.176  1.00  0.00           Cl  
+TER       9      MOL A   1
+ENDMDL
+CONECT    1    2
+CONECT    2    3    1    4    5
+CONECT    3    2
+CONECT    4    2
+CONECT    5    6    2    7    8
+CONECT    6    5
+CONECT    7    5
+CONECT    8    5
+END

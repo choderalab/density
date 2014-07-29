@@ -1,0 +1,24 @@
+MODEL        0
+ATOM      1  C1  MOL A   1      39.464  46.041   3.370  1.00  0.00           C  
+ATOM      2  H1  MOL A   1      39.044  45.081   3.080  1.00  0.00           H  
+ATOM      3  H2  MOL A   1      40.514  46.061   3.670  1.00  0.00           H  
+ATOM      4  H3  MOL A   1      38.794  46.531   4.080  1.00  0.00           H  
+ATOM      5  S1  MOL A   1      39.494  47.121   1.910  1.00  0.00           S  
+ATOM      6  C2  MOL A   1      38.064  46.491   1.010  1.00  0.00           C  
+ATOM      7  H4  MOL A   1      38.244  45.511   0.560  1.00  0.00           H  
+ATOM      8  H5  MOL A   1      37.184  46.551   1.650  1.00  0.00           H  
+ATOM      9  H6  MOL A   1      37.904  47.211   0.190  1.00  0.00           H  
+ATOM     10  O1  MOL A   1      40.684  46.631   1.150  1.00  0.00           O  
+TER      11      MOL A   1
+ENDMDL
+CONECT    1    2    3    4    5
+CONECT    2    1
+CONECT    3    1
+CONECT    4    1
+CONECT    5    1   10    6
+CONECT    6    5    7    8    9
+CONECT    7    6
+CONECT    8    6
+CONECT    9    6
+CONECT   10    5
+END
