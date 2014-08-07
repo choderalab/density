@@ -11,9 +11,11 @@ import mdtraj as md
 import numpy as np
 import simtk.openmm.app.element as elem
 import pymbar.timeseries as ts
+import rdkit.Chem as chem
+from rdkit.Chem import AllChem as allchem
 
 
-def case(molecule_name, num, steps, ff_mod):
+def caseFromPDB(molecule_name, num, steps, ff_mod):
 ##################################
 ## How to write a specific case ##
 ##################################
@@ -27,17 +29,29 @@ def case(molecule_name, num, steps, ff_mod):
     add_bonds_to_pdb(infile, topfile)
     forcefield = generate_ff(molecule_name, infile, mol2_filename, ff_mod, topfile)
     traj, xyz, top = set_topology(infile, num)
+    top = assign_element(top)
     system, integrator, temperature = openmm_system(forcefield, top)
     openmm_simulation(system, top, integrator, xyz, temperature, outfile, lastframe_file, outdata, dcd_file, steps)
     avg_density(dcd_file, lastframe_file, outdata)
 
-def massmod_case(molecule_name, num, steps, ff_mod):
+def caseFromPDBMassMod(molecule_name, num, steps, ff_mod):
     infile, topfile, outfile, outdata, lastframe_file, dcd_file, mol2_filename = name_outputs(molecule_name, num, ff_mod)
     add_bonds_to_pdb(infile, topfile)
     forcefield = generate_ff(molecule_name, infile, mol2_filename, ff_mod, topfile)
     traj, xyz, top = set_topology(infile, num)
+    top = assign_element(top)
     system, integrator, temperature = openmm_system(forcefield, top)
-    system = modify_mas(system, traj, topfile)
+    system = modify_mass(system, traj, topfile)
+    openmm_simulation(system, top, integrator, xyz, temperature, outfile, lastframe_file, outdata, dcd_file, steps)
+    avg_density(dcd_file, lastframe_file, outdata)
+
+def caseFromSmiles(molecule_name, smiles, num, steps, ff_mod):
+    infile, topfile, outfile, outdata, lastframe_file, dcd_file, mol2_filename = name_outputs(molecule_name, num, ff_mod)
+    files_from_smiles(smiles, infile)
+    forcefield = generate_ff(molecule_name, infile, mol2_filename, ff_mod, topfile)
+    traj, xyz, top = set_topology(infile, num)
+    system, integrator, temperature = openmm_system(forcefield, top)
+    system = modify_mass(system, traj, topfile)
     openmm_simulation(system, top, integrator, xyz, temperature, outfile, lastframe_file, outdata, dcd_file, steps)
     avg_density(dcd_file, lastframe_file, outdata)
 
@@ -53,6 +67,13 @@ def name_outputs(molecule_name, num, ff_mod):
     dcd_file = outfile[:-4]+'.dcd'
     mol2_filename = molecule_name + '.mol2'
     return infile, topfile, outfile, outdata, lastframe_file, dcd_file, mol2_filename 
+
+def files_from_smiles(smiles, infile):
+    molecule = chem.MolFromSmiles(smiles)
+    molecule = chem.AddHs(molecule)
+    allchem.EmbedMolecule(molecule)
+    allchem.UFFOptimizeMolecule(molecule)
+    chem.MolToPDBFile(molecule, infile)
 
 def add_bonds_to_pdb(infile, topfile):
     t = md.load_pdb(infile)
@@ -90,7 +111,6 @@ def set_topology(infile, num):
     traj = gaff2xml.packmol.pack_box([infile],[num])
     xyz = traj.openmm_positions(0)
     top = traj.top.to_openmm()
-    top = assign_element(top)
     top.setUnitCellDimensions(mm.Vec3(*traj.unitcell_lengths[0])*u.nanometer)
     return traj, xyz, top
 
@@ -110,8 +130,8 @@ def openmm_simulation(system, top, integrator, xyz, temperature, outfile, lastfr
     simulation.step(60000)
     simulation.reporters.append(app.PDBReporter(outfile, 1000))
     simulation.reporters.append(app.PDBReporter(lastframe_file,steps-1))
-    simulation.reporters.append(app.StateDataReporter(outdata, 1000, step=True, temperature=True, density=True))
-    simulation.reporters.append(app.StateDataReporter(stdout, 1000, step=True, temperature=True, density=True))
+    simulation.reporters.append(app.StateDataReporter(outdata, 1000, step=True, temperature=True, density=True, potentialEnergy=True))
+    simulation.reporters.append(app.StateDataReporter(stdout, 1000, step=True, temperature=True, density=True, potentialEnergy=True))
     simulation.reporters.append(app.DCDReporter(dcd_file,1000))
     simulation.step(steps)
 
